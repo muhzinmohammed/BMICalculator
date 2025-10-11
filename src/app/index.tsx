@@ -1,3 +1,4 @@
+import MaskedView from '@react-native-masked-view/masked-view';
 import * as Font from 'expo-font';
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -12,18 +13,53 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Button from "../components/button";
+import HeightSlider from '../components/slider';
 
 export default function HeightScreen() {
   const [unit, setUnit] = useState("cm");
-  const [height, setHeight] = useState("174");
+  const [height, setHeight] = useState("0");
+  const [heightin, setHeightin] = useState<string|null>("");
 
   useEffect(() => {
     Font.loadAsync({
+      'Gilroy-Bold': require('../assets/fonts/gilroy-bold.ttf'),
       'Gilroy-SemiBold': require('../assets/fonts/gilroy-semibold.ttf'),
       'Gilroy-Regular': require('../assets/fonts/gilroy-regular.ttf'),
     });
   }, []);
   
+  useEffect(() => {
+    if (unit === "ft") {
+      const valInCm = parseFloat(height);
+      if (!isNaN(valInCm)) {
+        // Convert cm → inches
+        const totalInches = valInCm / 2.54;
+        handleHeight(totalInches,"ft");
+      }
+    } else if (unit === "cm") {
+      // Convert ft + in → cm
+      const feet = parseInt(height) || 0;
+      const inches = parseInt(heightin || "0");
+      const totalInches = feet * 12 + inches;
+      const totalCm = totalInches * 2.54;
+      handleHeight(Math.round(totalCm),"cm");
+    }
+  }, [unit]);
+
+  
+  const handleHeight = (val:number, targetUnit = unit) =>{
+    let roundedHeight = val
+    if(targetUnit === "ft"){
+      roundedHeight = Math.floor(val/12);
+      const roundedHeightin = Math.floor(val-roundedHeight*12);
+      if(roundedHeightin>0){
+        setHeightin(roundedHeightin.toString());
+      }else{
+        setHeightin(null);
+      }
+    }
+    setHeight(roundedHeight.toString());
+  }
   return (
     <LinearGradient
       colors={["rgb(255, 244, 170)", "rgba(247, 247, 247, 1)"]}
@@ -36,10 +72,9 @@ export default function HeightScreen() {
       />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Progress Dots */}
         <View style={styles.progressContainer}>
-          <View style={[styles.dot, { opacity: 0.4 }]} />
           <View style={[styles.dot, { opacity: 1 }]} />
+          <View style={[styles.dot, { opacity: 0.4 }]} />
           <View style={[styles.dot, { opacity: 0.4 }]} />
         </View>
 
@@ -86,21 +121,65 @@ export default function HeightScreen() {
           onChangeText={setHeight}
           keyboardType="numeric"
           placeholder="Enter your height"
+          placeholderTextColor={"rgba(94, 99, 104, 1)"}
+          returnKeyType="done"
         />
 
         {/* Height Meter Section */}
         <View style={styles.heightMeter}>
-          <View style={styles.heightValueContainer}>
-            <Text style={styles.heightValue}>{height}</Text>
-            <Text style={styles.heightUnit}>{unit}</Text>
-          </View>
+          <View style={styles.heightInfoContainer}>
+            <View style={styles.heightValueContainer}>
+              <Text style={styles.heightValue}>{height? height:""}</Text>
+              <View>
+                {heightin? null:(<Image
+                  source={require("../assets/images/wide.png")} // Replace with your local asset
+                  style={{width:28, flex: 1, justifyContent: 'flex-start' }}
+                  resizeMode="contain"
+                  />)}
+                <Text style={styles.heightUnit}>{unit === "cm"? unit:"ft"}</Text>
+              </View>
+              {unit === "ft"? (
+                  <View style={{flexDirection:"row"}}>
+                    <Text style={styles.heightValue}>{heightin? heightin:""}</Text>
+                    <View>
+                      {heightin? (<Image
+                      source={require("../assets/images/wide.png")} // Replace with your local asset
+                      style={{width:28, flex: 1, justifyContent: 'flex-start' }}
+                      resizeMode="contain"
+                      />):null}
+                      <Text style={styles.heightUnit}>{heightin? "in":""}</Text>
+                    </View>
+                  </View>
+                ):null
+              }
+            </View>
 
-          {/* Placeholder for the avatar image */}
-          <Image
-            source={require("../assets/images/avatar.png")} // Replace with your local asset
-            style={styles.avatar}
-            resizeMode="contain"
-          />
+            {/* Placeholder for the avatar image */}
+            <Image
+              source={require("../assets/images/avatar.png")} // Replace with your local asset
+              style={styles.avatar}
+              resizeMode="contain"
+              />
+          </View>
+          <MaskedView
+            style={{  paddingRight:20}}
+            maskElement={
+              <LinearGradient
+                style={{ flex: 1 }}
+                colors={['transparent', 'black', 'black', 'transparent']}
+                locations={[0, 0.2, 0.8, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              />
+            }>
+              <HeightSlider 
+                onChange={(val) => handleHeight(val)} 
+                min={unit === "cm" ? 90:2} 
+                max={unit === "cm" ? 240:7} 
+                unit={unit}
+              />
+          </MaskedView>
+          <View style={styles.selectionLine}/>
         </View>
 
         <View style={styles.buttonContainer}>
@@ -128,7 +207,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 40,
+    paddingVertical: 20,
   },
   progressContainer: {
     flexDirection: "row",
@@ -161,20 +240,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   toggleContainer: {
+    height:34,
+    width:158,
     flexDirection: "row",
     backgroundColor: "#f5f5f5",
     borderRadius: 25,
     overflow: "hidden",
   },
   toggleButton: {
+    width:74,
     paddingVertical: 10,
-    paddingHorizontal: 30,
+    paddingHorizontal: 10,
+    alignContent:"center"
   },
   toggleActive: {
     borderRadius:25,
-    width:100,
     backgroundColor: "#000",
-    elevation: 2,
   },
   toggleText: {
     fontFamily:"Gilroy-SemiBold",
@@ -191,23 +272,42 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 54,
+    paddingLeft: 20,
     width: "80%",
-    textAlign: "center",
+    height: 48,
+    textAlign: "left",
+    color:"rgb(0, 0, 0)",
     marginTop: 15,
     fontSize: 16,
   },
   heightMeter: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
+    display:"flex",
+    flexDirection:"row",
+    justifyContent:"space-between",
+    paddingVertical:20,
+    height:380,
+    width:"100%",
+    marginLeft:50,
+    // borderWidth:1,
+    // borderColor:"black"
+  },
+  heightInfoContainer: {
+    marginTop:10,
+    height:320,  
+    // borderWidth:1,
+    // borderColor:"black"
   },
   heightValueContainer: {
+    marginTop:20,
     flexDirection: "row",
     alignItems: "flex-end",
+    height:70,
+    // borderWidth:1,
+    // borderColor:"black"
   },
   heightValue: {
+    fontFamily:"Gilroy-Bold",
     fontSize: 52,
     fontWeight: "700",
     color: "#222",
@@ -218,10 +318,19 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     marginBottom: 10,
   },
+  selectionLine: {
+      position: 'absolute',
+      width: '100%',
+      height: 3,
+      backgroundColor: "rgba(254, 186, 27, 1)", 
+      top: 120, 
+      zIndex: 10,
+  },
   avatar: {
-    width: 150,
-    height: 200,
-    marginTop: 10,
+    width: 170,
+    height: 260,
+    // borderWidth:1,
+    // borderColor:"red"
   },
   buttonContainer: {
     flexDirection: "row",
