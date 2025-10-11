@@ -1,19 +1,13 @@
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type Props = {
-  min: number;
-  max: number;
   unit:string;
   onChange?: (value: number) => void;
 };
 
-const HeightSlider = ({
-  min = 100,
-  max = 240,
-  unit,
-  onChange,
-}: Props) => {
+const HeightSlider = ({unit,onChange}: Props) => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView | null>(null);
 
@@ -21,23 +15,41 @@ const HeightSlider = ({
     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
     { useNativeDriver: false }
   );
-
-  const pixel_count = unit === "cm"? 70:84 
-  const unit_no = unit === "cm"? 10:12
-  max = unit === "cm"? max:max*12
-  min = unit === "cm"? min:min*12
+  
+  const isCm = unit === "cm";
+  const pixel_count = isCm? 70:84 
+  const unit_no = isCm? 10:12
+  const max = isCm? 240:96
+  const min = isCm? 90:16
+  
   useEffect(() => {
+    let lastValue = -1
     const listener = scrollY.addListener(({ value }) => {
       const stepsScrolled = value / pixel_count;
       const currentHeight = max - stepsScrolled * unit_no;
       const clampedHeight = Math.max(min, Math.min(max, currentHeight));
       let roundedHeight = Math.round(clampedHeight);
+
+      if (roundedHeight !== lastValue) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        lastValue = roundedHeight;
+      }
+
       onChange?.(roundedHeight);
     });
-
     return () => scrollY.removeListener(listener);
   }, [min, max]);
   
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({ y: 0, animated: true });
+      }
+    });
+    scrollY.setValue(0);
+    onChange?.(max);
+    }, [unit]);
+
   return (
     <View style={styles.container}>
       <Animated.ScrollView
@@ -50,10 +62,10 @@ const HeightSlider = ({
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        {unit === "cm"? (Array.from({ length: (max - min)/10 + 1 }, (_, i) => {
+        {isCm? (Array.from({ length: (max - min)/10 + 1 }, (_, i) => {
           const label = max - i * 10;
           return (
-            <View key={i} style={styles.mark}>
+            <View key={i} style={{flexDirection: "row"}}>
                 <Text>{label}</Text>
                 <View style={styles.lines}>
                     <View style={styles.markLine} />
@@ -66,14 +78,14 @@ const HeightSlider = ({
                 </View>
             </View>
           )
-        })):(Array.from({ length: (7 - 2) + 1 }, (_, i) => {
-            const label = 7 - i;
+        })):(Array.from({ length: (max - min)/12 + 1 }, (_, i) => {
+            const label = max/12 - i;
             return (
-              <View key={i} style={styles.mark}>
+              <View key={i} style={{flexDirection: "row"}}>
                   <Text>{label}</Text>
                   <View style={styles.lines}>
                       <View style={styles.markLine} />
-                      {Array.from({ length: 11 }, (_,j) => (i!=5?(
+                      {Array.from({ length: 11 }, (_,j) => (i!=6?(
                       (j == 5? (
                           <View key={j} style={styles.halfLine} />
                       ):(
@@ -102,9 +114,6 @@ const styles = StyleSheet.create({
     scrollContent: { 
         paddingTop: 100, 
         paddingBottom: 202, 
-    },
-    mark: { 
-        flexDirection: "row",
     },
     lines: {
         alignItems:"center",

@@ -2,7 +2,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import * as Font from 'expo-font';
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Image,
   StatusBar,
@@ -14,11 +14,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeightSlider from '../components/HeightSlider';
 import Button from "../components/button";
+import { useBmiContext } from '../context/BmiContext';
 
 export default function HeightScreen() {
-  const [unit, setUnit] = useState("cm");
-  const [height, setHeight] = useState("0");
-  const [heightin, setHeightin] = useState<string|null>("");
+
+  const {
+    height, 
+    setHeight,
+    heightUnit,
+    setHeightUnit,
+    heightin, 
+    setHeightin
+  } = useBmiContext();
+  
+  const isCm = heightUnit === "cm"
 
   useEffect(() => {
     Font.loadAsync({
@@ -28,26 +37,7 @@ export default function HeightScreen() {
     });
   }, []);
   
-  useEffect(() => {
-    if (unit === "ft") {
-      const valInCm = parseFloat(height);
-      if (!isNaN(valInCm)) {
-        // Convert cm → inches
-        const totalInches = valInCm / 2.54;
-        handleHeight(totalInches,"ft");
-      }
-    } else if (unit === "cm") {
-      // Convert ft + in → cm
-      const feet = parseInt(height) || 0;
-      const inches = parseInt(heightin || "0");
-      const totalInches = feet * 12 + inches;
-      const totalCm = totalInches * 2.54;
-      handleHeight(Math.round(totalCm),"cm");
-    }
-  }, [unit]);
-
-  
-  const handleHeight = (val:number, targetUnit = unit) =>{
+  const handleHeight = (val:number, targetUnit = heightUnit) =>{
     let roundedHeight = val
     if(targetUnit === "ft"){
       roundedHeight = Math.floor(val/12);
@@ -60,6 +50,7 @@ export default function HeightScreen() {
     }
     setHeight(roundedHeight.toString());
   }
+
   return (
     <LinearGradient
       colors={["rgb(255, 244, 170)", "rgba(247, 247, 247, 1)"]}
@@ -67,9 +58,8 @@ export default function HeightScreen() {
       end={{ x: 0.5, y: 0.3 }}      
       style={styles.container}
     >
-      <StatusBar
-        barStyle="dark-content" 
-      />
+
+      <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.progressContainer}>
@@ -77,44 +67,40 @@ export default function HeightScreen() {
           <View style={[styles.dot, { opacity: 0.4 }]} />
           <View style={[styles.dot, { opacity: 0.4 }]} />
         </View>
-
-        {/* Title */}
-        <View style={{}}>
+        <View>
           <Text style={styles.title}>What's your current height?</Text>
         </View>
         <Text style={styles.subtitle}>
           Tell us your current height to personalize your plan.
         </Text>
 
-        {/* Unit Toggle */}
         <View style={styles.toggleContainer}>
           <Button
             style={[
               styles.toggleButton,
-              unit === "cm" && styles.toggleActive,
+              isCm && styles.toggleActive,
             ]}
-            onPress={() => setUnit("cm")}
+            onPress={() => setHeightUnit("cm")}
             nameStyle={[
                 styles.toggleText,
-                unit === "cm" && styles.toggleTextActive,
+                isCm && styles.toggleTextActive,
               ]}
             name="cm"
           />
           <Button
             style={[
               styles.toggleButton,
-              unit === "ft" && styles.toggleActive,
+              heightUnit === "ft" && styles.toggleActive,
             ]}
-            onPress={() => setUnit("ft")}
+            onPress={() => setHeightUnit("ft")}
             nameStyle={[
                 styles.toggleText,
-                unit === "ft" && styles.toggleTextActive,
+                heightUnit === "ft" && styles.toggleTextActive,
               ]}
             name="ft"
           />
         </View>
 
-        {/* Height Input */}
         <TextInput
           style={styles.input}
           value={height}
@@ -123,27 +109,32 @@ export default function HeightScreen() {
           placeholder="Enter your height"
           placeholderTextColor={"rgba(94, 99, 104, 1)"}
           returnKeyType="done"
+          onEndEditing={() => {
+            let val = parseInt(height);
+            if (!isNaN(val)) {
+              handleHeight(val); 
+            }
+          }}
         />
 
-        {/* Height Meter Section */}
         <View style={styles.heightMeter}>
           <View style={styles.heightInfoContainer}>
             <View style={styles.heightValueContainer}>
               <Text style={styles.heightValue}>{height? height:""}</Text>
               <View>
                 {heightin? null:(<Image
-                  source={require("../assets/images/wide.png")} // Replace with your local asset
+                  source={require("../assets/images/wide.png")} 
                   style={{width:28, flex: 1, justifyContent: 'flex-start' }}
                   resizeMode="contain"
                   />)}
-                <Text style={styles.heightUnit}>{unit === "cm"? unit:"ft"}</Text>
+                <Text style={styles.heightUnit}>{isCm? heightUnit:"ft"}</Text>
               </View>
-              {unit === "ft"? (
+              {heightUnit === "ft"? (
                   <View style={{flexDirection:"row"}}>
                     <Text style={styles.heightValue}>{heightin? heightin:""}</Text>
                     <View>
                       {heightin? (<Image
-                      source={require("../assets/images/wide.png")} // Replace with your local asset
+                      source={require("../assets/images/wide.png")} 
                       style={{width:28, flex: 1, justifyContent: 'flex-start' }}
                       resizeMode="contain"
                       />):null}
@@ -154,15 +145,14 @@ export default function HeightScreen() {
               }
             </View>
 
-            {/* Placeholder for the avatar image */}
             <Image
-              source={require("../assets/images/avatar.png")} // Replace with your local asset
+              source={require("../assets/images/avatar.png")} 
               style={styles.avatar}
               resizeMode="contain"
-              />
+            />
           </View>
           <MaskedView
-            style={{  paddingRight:20}}
+            style={{ paddingRight:20}}
             maskElement={
               <LinearGradient
                 style={{ flex: 1 }}
@@ -174,9 +164,7 @@ export default function HeightScreen() {
             }>
               <HeightSlider 
                 onChange={(val) => handleHeight(val)} 
-                min={unit === "cm" ? 90:2} 
-                max={unit === "cm" ? 240:7} 
-                unit={unit}
+                unit={heightUnit}
               />
           </MaskedView>
           <View style={styles.selectionLine}/>
@@ -229,7 +217,6 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#222",
     marginTop: 15,
-
   },
   subtitle: {
     fontFamily:"Gilroy-Regular",
@@ -262,8 +249,6 @@ const styles = StyleSheet.create({
     textAlign:"center",
     fontSize: 14,
     color: "#999",
-    // borderColor:"black",
-    // borderWidth:1,
   },
   toggleTextActive: {
     color: "#fff",
@@ -289,22 +274,16 @@ const styles = StyleSheet.create({
     height:380,
     width:"100%",
     marginLeft:50,
-    // borderWidth:1,
-    // borderColor:"black"
   },
   heightInfoContainer: {
     marginTop:10,
     height:320,  
-    // borderWidth:1,
-    // borderColor:"black"
   },
   heightValueContainer: {
     marginTop:20,
     flexDirection: "row",
     alignItems: "flex-end",
     height:70,
-    // borderWidth:1,
-    // borderColor:"black"
   },
   heightValue: {
     fontFamily:"Gilroy-Bold",
@@ -331,8 +310,6 @@ const styles = StyleSheet.create({
   avatar: {
     width: 170,
     height: 260,
-    // borderWidth:1,
-    // borderColor:"red"
   },
   buttonContainer: {
     flexDirection: "row",

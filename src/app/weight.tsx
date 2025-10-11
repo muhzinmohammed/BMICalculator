@@ -2,7 +2,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import * as Font from 'expo-font';
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Image,
   StatusBar,
@@ -14,11 +14,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import WeightSlider from '../components/WeightSlider';
 import Button from "../components/button";
+import { useBmiContext } from '../context/BmiContext';
 
 export default function WeightScreen() {
-  const [unit, setUnit] = useState("kg");
-  const [weight, setWeight] = useState("0");
-  const [bmi, setBmi] = useState("16.1");
+  const {
+    weight, 
+    setWeight,
+    weightUnit, 
+    setWeightUnit,
+    bmi
+  } = useBmiContext();
+
+  const isKg = weightUnit === "kg"
 
   useEffect(() => {
     Font.loadAsync({
@@ -35,9 +42,7 @@ export default function WeightScreen() {
       end={{ x: 0.5, y: 0.3 }}      
       style={styles.container}
     >
-      <StatusBar
-        barStyle="dark-content" 
-      />
+      <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.progressContainer}>
@@ -46,43 +51,40 @@ export default function WeightScreen() {
           <View style={[styles.dot, { opacity: 0.4 }]} />
         </View>
 
-        {/* Title */}
-        <View style={{}}>
+        <View>
           <Text style={styles.title}>What's your current weight?</Text>
         </View>
         <Text style={styles.subtitle}>
           Tell us your current weight to personalize your plan.
         </Text>
 
-        {/* Unit Toggle */}
         <View style={styles.toggleContainer}>
           <Button
             style={[
               styles.toggleButton,
-              unit === "kg" && styles.toggleActive,
+              isKg && styles.toggleActive,
             ]}
-            onPress={() => setUnit("kg")}
+            onPress={() => setWeightUnit("kg")}
             nameStyle={[
                 styles.toggleText,
-                unit === "kg" && styles.toggleTextActive,
+                isKg && styles.toggleTextActive,
               ]}
             name="kg"
           />
           <Button
             style={[
               styles.toggleButton,
-              unit === "lb" && styles.toggleActive,
+              weightUnit === "lb" && styles.toggleActive,
             ]}
-            onPress={() => setUnit("lb")}
+            onPress={() => setWeightUnit("lb")}
             nameStyle={[
                 styles.toggleText,
-                unit === "lb" && styles.toggleTextActive,
+                weightUnit === "lb" && styles.toggleTextActive,
               ]}
             name="lb"
           />
         </View>
 
-        {/* Weight Input */}
         <TextInput
           style={styles.input}
           value={weight}
@@ -93,22 +95,26 @@ export default function WeightScreen() {
           returnKeyType="done"
         />
 
-        {/* Weight Meter Section */}
         <View style={styles.weightMeter}>
-          <View style={styles.heightInfoContainer}>
-            <View style={styles.heightValueContainer}>
-              <Text style={styles.heightValue}>{weight? weight:""}</Text>
+          <View style={styles.weightInfoContainer}>
+            <Image
+              source={require("../assets/images/wide.png")} 
+              style={{width:14,position:"absolute",bottom:-5,right:85}}
+              resizeMode="contain"
+            />
+            <View style={styles.weightValueContainer}>
+              <Text style={styles.weightValue}>{weight? weight:""}</Text>
               <View>
                 <Image
-                  source={require("../assets/images/wide.png")} // Replace with your local asset
+                  source={require("../assets/images/wide.png")} 
                   style={{width:28, flex: 1, justifyContent: 'flex-start' }}
                   resizeMode="contain"
                 />
-                <Text style={styles.heightUnit}>{unit === "kg"? unit:"lb"}</Text>
+                <Text style={styles.weightUnit}>{isKg? weightUnit:"lb"}</Text>
               </View>
             </View>
-              
           </View>
+
           <MaskedView
             maskElement={
               <LinearGradient
@@ -119,41 +125,43 @@ export default function WeightScreen() {
                 end={{ x: 1, y: 0 }}
               />
             }>
-            <View>
               <WeightSlider 
                 onChange={setWeight} 
-                min={unit === "kg" ? 30:60} 
-                max={unit === "kg" ? 150:300} 
-                unit={unit}
+                unit={weightUnit}
               />
-            </View>
           </MaskedView>
-          <View style={styles.selectionLine}/>
+
+          <View style={styles.selectionLineBorder}>
+            <View style={styles.selectionLine}/>
+          </View>
         </View>
 
         <View style={styles.bmiContainer}>
           <Image
-            source={require("../assets/images/wide.png")} // Replace with your local asset
+            source={require("../assets/images/wide.png")} 
             style={{width:12,position:"absolute",bottom:5,right:150}}
             resizeMode="contain"
           />
           <Image
-            source={require("../assets/images/wide.png")} // Replace with your local asset
+            source={require("../assets/images/wide.png")} 
             style={{width:20,position:"absolute",top:5,right:90}}
             resizeMode="contain"
           />
           <Text style={[styles.bmiTitle]}>Your current BMI!</Text>
           <Image
-            source={require("../assets/images/Weighingmachine.png")} // Replace with your local asset
+            source={require("../assets/images/Weighingmachine.png")} 
             style={{width:100,height:100,position:"absolute",top:-25,right:-20}}
             resizeMode="contain"
             />
           <View style={styles.bmiContent}>
             <Text style={styles.bmi}>{bmi}</Text>
-            <Text style={styles.bmiText}>You have a great potential to 
-                  get in better shape. Move now!</Text>
+            <Text style={styles.bmiText}>
+              You have a great potential to 
+              get in better shape. Move now!
+            </Text>
           </View>
         </View>
+
         <View style={styles.buttonContainer}>
           <Button
             style={styles.previousButton}
@@ -201,7 +209,6 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#222",
     marginTop: 15,
-
   },
   subtitle: {
     fontFamily:"Gilroy-Regular",
@@ -234,8 +241,6 @@ const styles = StyleSheet.create({
     textAlign:"center",
     fontSize: 14,
     color: "#999",
-    // borderColor:"black",
-    // borderWidth:1,
   },
   toggleTextActive: {
     color: "#fff",
@@ -256,36 +261,25 @@ const styles = StyleSheet.create({
   weightMeter: {
     display:"flex",
     alignItems:"center",
-    // flexDirection:"row",
-    // justifyContent:"space-between",
-    // paddingVertical:20,
     height:280,
     width:"100%",
-    // marginLeft:50,
-    // borderWidth:1,
-    // borderColor:"black"
   },
-  heightInfoContainer: {
+  weightInfoContainer: {
     marginTop:10,
-    // height:100,  
-    // borderWidth:1,
-    // borderColor:"black"
   },
-  heightValueContainer: {
+  weightValueContainer: {
     marginTop:20,
     flexDirection: "row",
     alignItems: "flex-end",
     height:70,
-    // borderWidth:1,
-    // borderColor:"black"
   },
-  heightValue: {
+  weightValue: {
     fontFamily:"Gilroy-Bold",
     fontSize: 52,
     fontWeight: "700",
     color: "#222",
   },
-  heightUnit: {
+  weightUnit: {
     fontSize: 18,
     fontFamily:"Gilroy-SemiBold",
     fontWeight:400,
@@ -293,16 +287,24 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     marginBottom: 10,
   },
+  selectionLineBorder :{
+    position: 'absolute',
+    alignItems:"center",
+    justifyContent:"center",
+    width: 7,
+    borderRadius:3,
+    height: 140,
+    borderWidth:1,
+    borderColor: "rgba(254, 186, 27, 1)", 
+    top: 120, 
+    zIndex: 10,
+  },
   selectionLine: {
-      position: 'absolute',
-      width: 4,
+      width: 3,
       borderRadius:2,
-      height: 150,
+      height: 134,
       backgroundColor: "rgba(254, 186, 27, 1)", 
-      top: 120, 
-      zIndex: 10,
   },bmiContainer: {
-    // flexDirection:"row",
     height:100,
     width:350,
     borderRadius:16,
@@ -312,7 +314,6 @@ const styles = StyleSheet.create({
   },
   bmiTitle: {
     width:200,
-    // textAlign:"center",
     fontFamily:"Gilroy-SemiBold",
     fontSize: 14,
     fontWeight: "400",

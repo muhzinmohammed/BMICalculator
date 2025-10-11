@@ -1,32 +1,37 @@
+import * as Haptics from "expo-haptics";
 import { useEffect, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type Props = {
-  min: number;
-  max: number;
   unit:string;
   onChange?: (value: string) => void;
 };
 
-const WeightSlider = ({
-  min = 100,
-  max = 240,
-  unit,
-  onChange,
-}: Props) => {
+const WeightSlider = ({unit,onChange}: Props) => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView | null>(null);
+
+  const max = unit === "kg"? 150:300
+  const min = unit === "kg"? 30:60
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
     { useNativeDriver: false }
   );
+
   useEffect(() => {
+    let lastValue = -1
     const listener = scrollX.addListener(({ value }) => {
       const stepsScrolled = value / 55;
       const currentHeight = min + stepsScrolled * 5;
       const clampedHeight = Math.max(min, Math.min(max, currentHeight));
       let roundedHeight = Math.round(clampedHeight);
+
+      if (roundedHeight !== lastValue) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        lastValue = roundedHeight;
+      }
+
       onChange?.(roundedHeight.toString());
     });
 
@@ -49,7 +54,7 @@ const WeightSlider = ({
         {Array.from({ length: (max - min)/5 + 1 }, (_, i) => {
           const label = min + i * 5;
           return (
-            <View key={i} style={styles.mark}>
+            <View key={i} >
                 <View style={styles.lines}>
                     <View style={styles.markLine} />
                     {Array.from({ length: 4 }, (_,j) => (i*5!=max-min?(
@@ -69,15 +74,10 @@ const styles = StyleSheet.create({
     container: { 
         alignItems: "center",
         justifyContent:"center",
-        // borderWidth:1,
-        // borderColor:"black",
         height: 200,
     },  
     tapeContainer: {
-        // width: 150,
-        // height:10,
         borderRadius: 10,
-        // overflow: "hidden",
         backgroundColor: "#f7f7f7",
     },
     scrollContent: { 
@@ -85,9 +85,6 @@ const styles = StyleSheet.create({
         paddingRight: 185, 
         paddingTop:30
     },
-    mark: { 
-        // flexDirection: "row",
-      },
     lines: {    
         flexDirection: "row",
         alignItems:"center",

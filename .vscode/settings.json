@@ -3,5 +3,7 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "editor.colorDecorators": true,
+  "editor.colorDecoratorsActivatedOn": ["rgb", "rgba", "hsl", "hsla", "hex"],
 }
