@@ -12,8 +12,8 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import HeightSlider from '../components/HeightSlider';
 import Button from "../components/button";
-import HeightSlider from '../components/slider';
 
 export default function HeightScreen() {
   const [unit, setUnit] = useState("cm");
@@ -314,6 +314,8 @@ const styles = StyleSheet.create({
   },
   heightUnit: {
     fontSize: 18,
+    fontFamily:"Gilroy-SemiBold",
+    fontWeight:400,
     color: "#666",
     marginLeft: 5,
     marginBottom: 10,
