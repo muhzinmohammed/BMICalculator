@@ -2,7 +2,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import * as Font from 'expo-font';
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StatusBar,
   StyleSheet,
@@ -17,7 +17,7 @@ import { useBmiContext } from '../context/BmiContext';
 
 export default function WeightScreen() {
   const {age,setAge} = useBmiContext();
-
+  const [dob,setDob] = useState("");
   useEffect(() => {
     Font.loadAsync({
       'Gilroy-Bold': require('../assets/fonts/gilroy-bold.ttf'),
@@ -72,7 +72,7 @@ export default function WeightScreen() {
                 end={{ x: 0, y: 1 }}
               />
             }>
-          <DatePicker />
+          <DatePicker onChange={setDob}/>
         </MaskedView> 
 
         <View style={styles.buttonContainer}>

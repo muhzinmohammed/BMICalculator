@@ -49,7 +49,17 @@ const HeightSlider = ({unit,onChange}: Props) => {
     scrollY.setValue(0);
     onChange?.(max);
     }, [unit]);
-
+    
+    useEffect(() => {
+      requestAnimationFrame(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ y: 0, animated: true });
+        }
+      });
+      scrollY.setValue(0);
+      onChange?.(max);
+      }, [unit]);
+      
   return (
     <View style={styles.container}>
       <Animated.ScrollView
